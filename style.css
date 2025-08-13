@@ -1,0 +1,92 @@
+.btn-olive {
+  background-color: #808000 !important;
+  color: #fff !important;
+  border: none !important;
+}
+.btn-olive:hover, .btn-olive:focus {
+  background-color: #6b7300 !important;
+  color: #fff !important;
+}
+/* Minimal custom styles; Bootstrap handles most layout */
+:root {
+  --bg: #ffffff;
+  --fg: #212529;
+  --card: #ffffff;
+  --muted: #6c757d;
+
+.dark-mode {
+  --bg: #0f1115;
+  --fg: #e8eaed;
+  --card: #161a22;
+  --muted: #aab4be;
+}
+
+/* Fix text color for dark mode */
+.dark-mode,
+.dark-mode .card,
+.dark-mode .form-label,
+.dark-mode .form-control,
+.dark-mode .card-title,
+.dark-mode .table,
+.dark-mode .btn,
+.dark-mode .navbar,
+.dark-mode .modal-content,
+.dark-mode .modal-title {
+  color: var(--fg) !important;
+}
+
+.dark-mode .form-control {
+  background: #161a22;
+  border-color: #2a2f3a;
+  color: var(--fg);
+}
+
+.dark-mode .form-control::placeholder {
+  color: #aab4be;
+}
+
+.dark-mode .btn-outline-secondary,
+.dark-mode .btn-outline-danger {
+  color: var(--fg);
+  border-color: #aab4be;
+}
+
+.dark-mode .btn-primary {
+  color: #fff;
+}
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+.text-muted { color: var(--muted) !important; }
+
+/* Product image placeholder */
+.product-thumb {
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(135deg, rgba(108,117,125,.15), rgba(13,110,253,.15));
+  border-radius: .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.pointer { cursor: pointer; }
+
+/* Tables in dark mode */
+.dark-mode .table {
+  --bs-table-bg: #161a22;
+  --bs-table-striped-bg: #131720;
+  --bs-table-striped-color: var(--fg);
+  --bs-table-color: var(--fg);
+  --bs-table-border-color: #2a2f3a;
+}
