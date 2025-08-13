@@ -103,7 +103,7 @@ function logout() {
 }
 
 // ===== Products =====
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   { id: "p1", name: "Wireless Mouse", price: 2200 },
   { id: "p2", name: "Mechanical Keyboard", price: 9800 },
   { id: "p3", name: "USB-C Charger 45W", price: 3500 },
@@ -112,11 +112,19 @@ const PRODUCTS = [
   { id: "p6", name: "32GB Flash Drive", price: 1200 },
 ];
 
+const PRODUCTS_KEY = "products";
+function getProducts() {
+  return lsGet(PRODUCTS_KEY, DEFAULT_PRODUCTS);
+}
+function setProducts(products) {
+  lsSet(PRODUCTS_KEY, products);
+}
+
 function renderProducts() {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
   const q = (document.getElementById("searchInput")?.value || "").toLowerCase();
-  const filtered = PRODUCTS.filter(p => p.name.toLowerCase().includes(q));
+  const filtered = getProducts().filter(p => p.name.toLowerCase().includes(q));
 
   grid.innerHTML = "";
   filtered.forEach(p => {
@@ -353,6 +361,37 @@ function renderHistory() {
 
 // ===== Page Bootstraps =====
 document.addEventListener("DOMContentLoaded", () => {
+  // Product page
+  const onProduct = document.body.dataset.page === "product";
+  if (onProduct) {
+    applySavedTheme();
+    document.querySelectorAll("[data-action='toggle-theme']").forEach(b => b.addEventListener("click", toggleTheme));
+    document.getElementById("logoutBtn")?.addEventListener("click", logout);
+    const form = document.getElementById("addProductForm");
+    const alert = document.getElementById("productAlert");
+    if (form) {
+      form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const name = document.getElementById("productName").value.trim();
+        const price = parseInt(document.getElementById("productPrice").value);
+        if (!name || isNaN(price) || price < 1) {
+          alert.textContent = "Please enter a valid product name and price.";
+          alert.classList.remove("d-none", "alert-success");
+          alert.classList.add("alert-danger");
+          return;
+        }
+        // Generate unique id
+        const products = getProducts();
+        const id = "p" + (Date.now() + Math.floor(Math.random() * 1000));
+        products.push({ id, name, price });
+        setProducts(products);
+        alert.textContent = "Product added successfully!";
+        alert.classList.remove("d-none", "alert-danger");
+        alert.classList.add("alert-success");
+        form.reset();
+      });
+    }
+  }
   applySavedTheme();
 
   // Wire theme toggle if present
