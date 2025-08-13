@@ -37,17 +37,31 @@ function addHistory(email, order) {
 function applySavedTheme() {
   const mode = localStorage.getItem("theme") || "light";
   if (mode === "dark") document.body.classList.add("dark-mode");
+  else document.body.classList.remove("dark-mode");
   updateThemeToggleUI();
 }
 function toggleTheme() {
-  document.body.classList.toggle("dark-mode");
-  const mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
-  localStorage.setItem("theme", mode);
-  updateThemeToggleUI();
+  const switchEl = document.getElementById("themeSwitch");
+  let mode;
+  if (switchEl) {
+    mode = switchEl.checked ? "dark" : "light";
+    if (mode === "dark") document.body.classList.add("dark-mode");
+    else document.body.classList.remove("dark-mode");
+    localStorage.setItem("theme", mode);
+    updateThemeToggleUI();
+  } else {
+    document.body.classList.toggle("dark-mode");
+    mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
+    localStorage.setItem("theme", mode);
+    updateThemeToggleUI();
+  }
 }
 function updateThemeToggleUI() {
-  const t = document.getElementById("themeToggleLabel");
-  if (t) t.textContent = document.body.classList.contains("dark-mode") ? "Dark" : "Light";
+  const switchEl = document.getElementById("themeSwitch");
+  const labelEl = document.getElementById("themeSwitchLabel");
+  const isDark = document.body.classList.contains("dark-mode");
+  if (switchEl) switchEl.checked = isDark;
+  if (labelEl) labelEl.textContent = isDark ? "Dark mode" : "Light mode";
 }
 
 // ===== Auth Handlers =====
@@ -109,7 +123,7 @@ const DEFAULT_PRODUCTS = [
   { id: "p3", name: "USB-C Charger 45W", price: 3500 },
   { id: "p4", name: "Noise-Cancel Headphones", price: 14999 },
   { id: "p5", name: "1080p Webcam", price: 6500 },
-  { id: "p6", name: "32GB Flash Drive", price: 1200 },
+  { id: "p6", name: "32GB Flash Drive", price: 1200 }
 ];
 
 const PRODUCTS_KEY = "products";
@@ -173,8 +187,10 @@ function renderCart() {
   tbody.innerHTML = "";
 
   let subtotal = 0;
+  const products = getProducts();
   cart.forEach((ci, idx) => {
-    const p = PRODUCTS.find(pp => pp.id === ci.productId);
+    const p = products.find(pp => pp.id === ci.productId);
+    if (!p) return; // skip if product not found
     const line = p.price * ci.qty;
     subtotal += line;
 
@@ -230,10 +246,11 @@ function checkout() {
   const cart = getCart(email);
   if (!cart.length) return;
 
+  const products = getProducts();
   const lines = cart.map(ci => {
-    const p = PRODUCTS.find(pp => pp.id === ci.productId);
-    return { name: p.name, qty: ci.qty, price: p.price, subtotal: p.price * ci.qty };
-  });
+    const p = products.find(pp => pp.id === ci.productId);
+    return p ? { name: p.name, qty: ci.qty, price: p.price, subtotal: p.price * ci.qty } : null;
+  }).filter(Boolean);
   const subtotal = lines.reduce((s, l) => s + l.subtotal, 0);
   const tax = Math.round(subtotal * 0.10);
   const grand = subtotal + tax;
@@ -361,23 +378,105 @@ function renderHistory() {
 
 // ===== Page Bootstraps =====
 document.addEventListener("DOMContentLoaded", () => {
-  // Product page
-  const onProduct = document.body.dataset.page === "product";
-  if (onProduct) {
+  // Edit Product page
+  const onEditProduct = document.body.dataset.page === "edit-product";
+        if (onEditProduct) {
+          applySavedTheme();
+          document.querySelectorAll("[data-action='toggle-theme']").forEach(b => b.addEventListener("click", toggleTheme));
+          document.getElementById("logoutBtn")?.addEventListener("click", logout);
+          const select = document.getElementById("productSelect");
+          const nameInput = document.getElementById("editProductName");
+          const priceInput = document.getElementById("editProductPrice");
+          const form = document.getElementById("editProductForm");
+          const alert = document.getElementById("editProductAlert");
+          function populateEditDropdown() {
+            const products = getProducts();
+            select.innerHTML = products.map(p => `<option value="${p.id}">${p.name} (PKR ${p.price})</option>`).join("");
+            if (products.length) {
+              select.value = products[0].id;
+              nameInput.value = products[0].name;
+              priceInput.value = products[0].price;
+            } else {
+              nameInput.value = "";
+              priceInput.value = "";
+            }
+          }
+          if (select && nameInput && priceInput) {
+            populateEditDropdown();
+            select.addEventListener("change", function() {
+              const products = getProducts();
+              const prod = products.find(p => p.id === select.value);
+              if (prod) {
+                nameInput.value = prod.name;
+                priceInput.value = prod.price;
+              }
+            });
+            form.addEventListener("submit", function(e) {
+              e.preventDefault();
+              const products = getProducts();
+              const prod = products.find(p => p.id === select.value);
+              if (prod) {
+                prod.name = nameInput.value.trim();
+                prod.price = parseInt(priceInput.value);
+                setProducts(products);
+                alert.textContent = "Product updated successfully!";
+                alert.classList.remove("d-none", "alert-danger");
+                alert.classList.add("alert-success");
+                populateEditDropdown();
+              }
+            });
+            // Also repopulate dropdown if page regains focus (user switches tabs)
+            window.addEventListener("focus", populateEditDropdown);
+          }
+  }
+
+  // Delete Product page
+  const onDeleteProduct = document.body.dataset.page === "delete-product";
+        if (onDeleteProduct) {
+          applySavedTheme();
+          document.querySelectorAll("[data-action='toggle-theme']").forEach(b => b.addEventListener("click", toggleTheme));
+          document.getElementById("logoutBtn")?.addEventListener("click", logout);
+          const select = document.getElementById("deleteProductSelect");
+          const form = document.getElementById("deleteProductForm");
+          const alert = document.getElementById("deleteProductAlert");
+          function populateDeleteDropdown() {
+            const products = getProducts();
+            select.innerHTML = products.map(p => `<option value="${p.id}">${p.name} (PKR ${p.price})</option>`).join("");
+          }
+          if (select) {
+            populateDeleteDropdown();
+            form.addEventListener("submit", function(e) {
+              e.preventDefault();
+              const products = getProducts();
+              const idx = products.findIndex(p => p.id === select.value);
+              if (idx !== -1) {
+                products.splice(idx, 1);
+                setProducts(products);
+                alert.textContent = "Product deleted successfully!";
+                alert.classList.remove("d-none", "alert-danger");
+                alert.classList.add("alert-success");
+                populateDeleteDropdown();
+              }
+            });
+            // Also repopulate dropdown if page regains focus (user switches tabs)
+            window.addEventListener("focus", populateDeleteDropdown);
+          }
+  }
+  // Add Product page
+  const onAddProduct = document.body.dataset.page === "add-product";
+  if (onAddProduct) {
     applySavedTheme();
     document.querySelectorAll("[data-action='toggle-theme']").forEach(b => b.addEventListener("click", toggleTheme));
     document.getElementById("logoutBtn")?.addEventListener("click", logout);
     const form = document.getElementById("addProductForm");
-    const alert = document.getElementById("productAlert");
     if (form) {
       form.addEventListener("submit", function(e) {
         e.preventDefault();
         const name = document.getElementById("productName").value.trim();
         const price = parseInt(document.getElementById("productPrice").value);
         if (!name || isNaN(price) || price < 1) {
-          alert.textContent = "Please enter a valid product name and price.";
-          alert.classList.remove("d-none", "alert-success");
-          alert.classList.add("alert-danger");
+          // Show error in modal or alert
+          alert("Please enter a valid product name and price.");
           return;
         }
         // Generate unique id
@@ -385,16 +484,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const id = "p" + (Date.now() + Math.floor(Math.random() * 1000));
         products.push({ id, name, price });
         setProducts(products);
-        alert.textContent = "Product added successfully!";
-        alert.classList.remove("d-none", "alert-danger");
-        alert.classList.add("alert-success");
         form.reset();
+        // Show success modal
+        const modalEl = document.getElementById("addProductModal");
+        if (modalEl) {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+          modalEl.addEventListener("hidden.bs.modal", function handler() {
+            modalEl.removeEventListener("hidden.bs.modal", handler);
+            window.location.href = "dashboard.html";
+          });
+        } else {
+          window.location.href = "dashboard.html";
+        }
       });
     }
   }
   applySavedTheme();
-
-  // Wire theme toggle if present
+  // Wire theme switch if present
+  const themeSwitch = document.getElementById("themeSwitch");
+  if (themeSwitch) themeSwitch.addEventListener("change", toggleTheme);
   document.querySelectorAll("[data-action='toggle-theme']").forEach(b => b.addEventListener("click", toggleTheme));
 
   // Signup

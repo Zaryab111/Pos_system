@@ -13,9 +13,10 @@
         <a class="navbar-brand fw-semibold" href="#">Mini POS</a>
         <div class="ms-auto d-flex align-items-center gap-2">
           <a href="product.html" class="btn btn-sm btn-olive">Product</a>
-          <button class="btn btn-sm btn-olive" data-action="toggle-theme">
-            <span id="themeToggleLabel">Light</span> mode
-          </button>
+          <div class="form-check form-switch d-flex align-items-center">
+            <input class="form-check-input" type="checkbox" id="themeSwitch">
+            <label class="form-check-label ms-2" for="themeSwitch" id="themeSwitchLabel">Light mode</label>
+          </div>
           <button id="logoutBtn" class="btn btn-sm btn-olive">Logout</button>
         </div>
       </div>
